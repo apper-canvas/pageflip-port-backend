@@ -16,6 +16,7 @@
     "lucide-react": "^0.299.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-spring": "^9.7.2",
     "react-redux": "^9.2.0",
     "react-router-dom": "^6.15.0",
     "react-toastify": "^11.0.5"

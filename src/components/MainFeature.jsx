@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
+import { useSpring, animated } from 'react-spring';
 import { getIcon } from '../utils/iconUtils';
 
 // Icons
@@ -98,16 +99,16 @@ function MainFeature() {
   // State for drag animation
   const [dragOffset, setDragOffset] = useState(0);
   const [rotation, setRotation] = useState(0);
-  const [swipeResult, setSwipeResult] = useState(null);
-
-  const handleStartDrag = (event) => {
-    initialX.current = event.clientX || event.touches[0].clientX;
-    currentX.current = initialX.current;
-  };
-
-  const handleDrag = (event) => {
-    if (!initialX.current) return;
-    
+  const [filterVisible, setFilterVisible] = useState(false);
+  
+  // Refs for swipe handling
+  const dragConstraintRef = useRef(null);
+  const initialX = useRef(0);
+  const currentX = useRef(0);
+  
+  // State for drag animation
+  const [dragOffset, setDragOffset] = useState(0);
+  const [rotation, setRotation] = useState(0);
     const clientX = event.clientX || event.touches[0].clientX;
     currentX.current = clientX;
     
@@ -121,12 +122,54 @@ function MainFeature() {
   const handleEndDrag = () => {
     const offset = currentX.current - initialX.current;
     
+  const [swipeResult, setSwipeResult] = useState(null);
+
+  const handleStartDrag = (event) => {
+    initialX.current = event.clientX || event.touches[0].clientX;
+    currentX.current = initialX.current;
+  };
+
+    } else {
+      // Reset if the swipe wasn't decisive
+      setDragOffset(0);
+      setRotation(0);
+    }
+    
+    initialX.current = 0;
+    currentX.current = 0;
+  const handleDrag = (event) => {
+    if (!initialX.current) return;
+    
+    const clientX = event.clientX || event.touches[0].clientX;
+    currentX.current = clientX;
+    
+    const offset = currentX.current - initialX.current;
+    setDragOffset(offset);
+    
+    // Add a slight rotation based on drag
+    
+    // Reset card position
+    setDragOffset(0);
+    setRotation(0);
+    setSwipeResult(null);
+    setRotation(offset * 0.05);
+  };
+
+  const handleEndDrag = () => {
+    const offset = currentX.current - initialX.current;
+    
     // Threshold for a swipe
     if (offset > 100) {
       // Swipe right - like
       handleLikeBook();
     } else if (offset < -100) {
       // Swipe left - skip
+    
+    // Animate card off-screen to the right
+    setDragOffset(window.innerWidth);
+    
+    // Move to next book after animation
+    setTimeout(getNextBook, 300);
       handleSkipBook();
     } else {
       // Reset if the swipe wasn't decisive
@@ -440,6 +483,107 @@ function MainFeature() {
                     </div>
                   </motion.div>
                 )}
+                     ref={dragConstraintRef}>
+                  {/* Current book card */}
+                  <motion.div 
+                    className="swipe-card-shadow absolute inset-0 m-auto bg-white dark:bg-surface-800 rounded-xl overflow-hidden max-w-[90%] h-[90%] cursor-grab active:cursor-grabbing"
+                    style={{
+                      x: dragOffset,
+                      rotate: rotation,
+                      zIndex: 10
+                    }}
+                    drag="x"
+                    dragConstraints={dragConstraintRef}
+                    onDragStart={handleStartDrag}
+                    onDrag={handleDrag}
+                    onDragEnd={handleEndDrag}
+                  >
+                    <div className="relative h-full flex flex-col">
+                      {/* Swipe indicators */}
+                      <AnimatePresence>
+                        {dragOffset > 50 && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute top-4 left-4 z-20 bg-green-500 text-white p-2 rounded-full"
+                          >
+                            <ThumbsUp className="h-6 w-6" />
+                          </motion.div>
+                        )}
+                        
+                        {dragOffset < -50 && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute top-4 right-4 z-20 bg-red-500 text-white p-2 rounded-full"
+                          >
+                            <ThumbsDown className="h-6 w-6" />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                      
+                      {/* Book Cover */}
+                      <div className="relative w-full h-[60%] overflow-hidden">
+                        <img 
+                          src={currentBook.coverUrl}
+                          alt={`Cover of ${currentBook.title}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                        
+                        {/* Book genres */}
+                        <div className="absolute bottom-3 left-3 flex flex-wrap gap-1.5">
+                          {currentBook.genre.slice(0, 2).map(genre => (
+                            <span key={genre} className="px-2 py-0.5 bg-black/60 text-white text-xs rounded-full">
+                              {genre}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* Book Info */}
+                      <div className="flex-1 p-4 flex flex-col">
+                        <h3 className="text-xl font-bold mb-1 line-clamp-1">{currentBook.title}</h3>
+                        <p className="text-surface-600 dark:text-surface-400 text-sm mb-3">by {currentBook.author}</p>
+                        <p className="text-surface-700 dark:text-surface-300 text-sm line-clamp-3">
+                          {currentBook.blurb}
+                        </p>
+                        
+                        <div className="mt-auto flex justify-between items-center pt-3">
+                          <div className="flex space-x-1.5">
+                            {currentBook.mood.map(mood => (
+                              <span key={mood} className="px-2 py-0.5 bg-surface-100 dark:bg-surface-700 text-surface-700 dark:text-surface-300 text-xs rounded-full">
+                                {mood}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                  
+                  {/* Action buttons */}
+                  <div className="absolute bottom-6 left-0 right-0 z-20 flex justify-center space-x-4">
+                    <button
+                      onClick={handleSkipBook}
+                      className="p-4 bg-white dark:bg-surface-800 rounded-full shadow-soft hover:shadow-card transition-all"
+                      aria-label="Skip this book"
+                    >
+                      <ThumbsDown className="h-6 w-6 text-red-500" />
+                    </button>
+                    
+                    <button
+                      onClick={handleLikeBook}
+                      className="p-4 bg-white dark:bg-surface-800 rounded-full shadow-soft hover:shadow-card transition-all"
+                      aria-label="Like this book"
+                    >
+                      <ThumbsUp className="h-6 w-6 text-green-500" />
+                    </button>
+                  </div>
+                </div>
+              )}
               </AnimatePresence>
               
               {/* Book Swiping Area */}
