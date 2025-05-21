@@ -2,7 +2,9 @@ import * as LucideIcons from 'lucide-react';
 
 export const getIcon = (iconName) => {
   // Handle null/undefined case
-  if (!iconName) {
+  Sun,
+  LogOut,
+  Loader
     console.warn('No icon name provided, using Smile as fallback');
     return LucideIcons.Smile;
   }
@@ -10,7 +12,9 @@ export const getIcon = (iconName) => {
   // Step 1: Try direct match first (if already PascalCase)
   if (LucideIcons[iconName] && typeof LucideIcons[iconName] === 'function') {
     return LucideIcons[iconName];
-  }
+  sun: Sun,
+  logout: LogOut,
+  loader: Loader
   
   // Step 2: Handle various transformations from kebab-case to PascalCase
   let componentName = '';

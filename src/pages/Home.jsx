@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getIcon } from '../utils/iconUtils';
 import MainFeature from '../components/MainFeature';
+import { useAuth } from '../contexts/AuthContext';
 
 const Book = getIcon('book');
 const Glasses = getIcon('glasses');
+const LogOut = getIcon('logout');
 
 function Home() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -17,6 +19,8 @@ function Home() {
     
     return () => clearTimeout(timer);
   }, []);
+
+  const { currentUser, logout } = useAuth();
 
   // Page transition animation
   const pageVariants = {
@@ -39,8 +43,20 @@ function Home() {
             <Book className="h-7 w-7" />
             <h1 className="text-2xl md:text-3xl font-bold">PageFlip</h1>
           </div>
-          <div className="flex items-center">
-            <Glasses className="h-6 w-6" />
+          <div className="flex items-center space-x-4">
+            {currentUser && (
+              <div className="flex items-center space-x-2">
+                <img 
+                  src={currentUser.photoURL || 'https://via.placeholder.com/32'} 
+                  alt="Profile" 
+                  className="h-8 w-8 rounded-full border-2 border-white"
+                />
+                <span className="hidden md:inline text-sm">{currentUser.displayName}</span>
+                <button onClick={logout} className="p-2 hover:bg-primary-dark rounded-full" title="Logout">
+                  <LogOut className="h-5 w-5" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
