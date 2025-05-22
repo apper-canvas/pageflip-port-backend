@@ -9,6 +9,14 @@
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
+  "pnpm": {
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "react",
+        "react-dom",
+        "@types/react"]
+    }
+  },
   "dependencies": {
     "@reduxjs/toolkit": "2.7.0",
     "date-fns": "^4.1.0",
